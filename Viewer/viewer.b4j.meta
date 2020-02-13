@@ -4,6 +4,6 @@ ModuleBreakpoints0=
 ModuleBreakpoints1=
 ModuleClosedNodes0=
 ModuleClosedNodes1=
-NavigationStack=Main,changeIndex,136,6,Main,BANano_Ready,63,4,Main,setImages,104,6,Main,AppStart,26,0,Main,Process_Globals,15,6,Main,setImageSrc,118,6,Visual Designer,layout1.bjl,-100,6,Main,jumpToPage,183,1,Main,PageNum_Keyup,189,0,Main,SourceSKCheckbox_Change,192,1
+NavigationStack=Main,jumpToPage,183,1,Main,PageNum_Keyup,189,0,Main,SourceSKCheckbox_Change,192,1,Visual Designer,paginator.bjl,-100,1,Visual Designer,MultiLayout.bjl,-100,1,Main,Process_Globals,12,6,Main,loadPaginator,135,0,Visual Designer,layout1.bjl,-100,6,Main,setImageSrc,119,6,Main,AppStart,27,0
 SelectedBuild=0
 VisibleModules=1

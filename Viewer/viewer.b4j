@@ -51,7 +51,6 @@ Sub Process_Globals
 	Private currentIndex As Int=1
 	Private ResultRow As SKRow
 	Private idx As BANanoObject
-	Private SKImage1 As SKImage
 	Private projectName As String
 	Private dirPath As String
 	Private filename As String
@@ -65,7 +64,8 @@ Sub AppStart (Form1 As Form, Args() As String)
 	' you can change some output params here
 	BANano.Initialize("BANano", "Viewer",DateTime.Now)
 	BANano.HTML_NAME = "viewer.html"
-	BANano.JAVASCRIPT_NAME = "viewerpage" & DateTime.Now & ".js"
+	'BANano.JAVASCRIPT_NAME = "viewerpage" & DateTime.Now & ".js"
+	BANano.JAVASCRIPT_NAME = "viewerpage.js"
 	BANano.SERVICEWORKER_NAME="viewerSW.js"
 	BANano.MANIFEST_NAME="viewerManifest.json"
 	BANano.Header.Title="Comics Viewer"
@@ -149,6 +149,13 @@ Sub setImages(json As String)
 End Sub
 
 Sub setImageSrc
+	Dim Ret As Long
+	Dim AllViews As Map
+	Ret = BANano.LoadLayoutArray("#resultrow", "MultiLayout", (True)) 
+	' ret returns a unique number you can use to get all views
+	AllViews = BANano.GetAllViewsFromLayoutArray(Me, "MultiLayout", Ret)
+	Dim SKImage1 As SKImage = AllViews.Get("skimage1") ' always lowercase
+	
 	Dim imgUrl As String
 	'filename=filename.Replace("\","/")
 	Dim tempDirPath As String=dirPath
