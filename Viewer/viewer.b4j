@@ -1,0 +1,234 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+File1=background.jpg
+File10=MultiLayout.bjl
+File11=paginator.bjl
+File12=skeleton-all.min.css
+File13=styles.css
+File2=FontAwesome.otf
+File3=fontawesome-webfont.eot
+File4=fontawesome-webfont.svg
+File5=fontawesome-webfont.ttf
+File6=fontawesome-webfont.woff
+File7=fontawesome-webfont.woff2
+File8=layout1.bjl
+File9=lunr.js
+FileGroup1=Default Group
+FileGroup10=Default Group
+FileGroup11=Default Group
+FileGroup12=Default Group
+FileGroup13=Default Group
+FileGroup2=Default Group
+FileGroup3=Default Group
+FileGroup4=Default Group
+FileGroup5=Default Group
+FileGroup6=Default Group
+FileGroup7=Default Group
+FileGroup8=Default Group
+FileGroup9=Default Group
+Group=Default Group
+Library1=jcore
+Library2=jfx
+Library3=banano
+Library4=bananoskeleton
+Library5=jshell
+Module1=HTTPRequests
+NumberOfFiles=13
+NumberOfLibraries=5
+NumberOfModules=1
+Version=7.8
+@EndOfDesignText@
+#Region Project Attributes 
+	#MainFormWidth: 600
+	#MainFormHeight: 600 
+	#IgnoreWarnings: 16, 10, 14, 15
+#End Region
+
+Sub Process_Globals
+	Private BANano As BANano 'ignore
+	Private Keyword As SKTextBox 'ignore
+	Private SKNavigationBar1 As SKNavigationBar 'ignore
+	Private currentIndex As Int=1
+	Private ResultRow As SKRow
+	Private idx As BANanoObject
+	Private SKImage1 As SKImage
+	Private projectName As String
+	Private dirPath As String
+	Private filename As String
+	Private images As List
+	Private isFile As Boolean
+	Private SourceSKCheckbox As SKCheckbox
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	
+	' you can change some output params here
+	BANano.Initialize("BANano", "Viewer",DateTime.Now)
+	BANano.HTML_NAME = "viewer.html"
+	BANano.JAVASCRIPT_NAME = "viewerpage" & DateTime.Now & ".js"
+	BANano.SERVICEWORKER_NAME="viewerSW.js"
+	BANano.MANIFEST_NAME="viewerManifest.json"
+	BANano.Header.Title="Comics Viewer"
+	
+	BANano.ExternalTestConnectionServer = "http://www.baidu.com"
+	BANano.Header.AddCSSFile("skeleton-all.min.css")
+	BANano.Header.AddCSSFile("styles.css")
+	' start the build
+	BANano.Build(File.DirApp)
+	ExitApplication
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
+
+' HERE STARTS YOUR APP
+Sub BANano_Ready()
+	' normal layouts
+	BANano.LoadLayout("#body", "layout1")
+	' Add some menu items (are added in reverse!)
+	SKNavigationBar1.AddMenu("about","关于")
+	SKNavigationBar1.AddMenu("logo", "阅读")
+	images.Initialize
+	Dim params As Map=BANano.GetURLParams(BANano.GetCurrentUrl)
+	Log(params)
+	If params.ContainsKey("path") Then
+		isFile=True
+		loadImage(params.Get("path"))
+	Else if params.ContainsKey("project") Then
+		isFile=False
+		loadImage(params.Get("project"))
+	Else
+	    BANano.Alert("未指定路径。")
+	End If
+	addHandler
+End Sub
+
+Sub loadImage(url As String)
+	'1.itp:3.jpg:0
+	If isFile Then
+		Dim parts As List
+		parts.Initialize
+		parts.AddAll(BANano.Split(":",url))
+		projectName=parts.Get(0)
+		filename=parts.Get(1)
+		Dim index As Int=parts.Get(2)
+	'1.itp
+	Else
+		projectName=url
+	End If
+	loadImages
+End Sub
+
+Sub loadImages
+	Dim url As String="/"&projectName&"-images.json"
+	Log(url)
+	HTTPRequests.GetResults(url)
+End Sub
+
+Sub setImages(json As String)
+	Dim map1 As Map=BANano.FromJson(json)
+	Log(map1)
+	images=map1.Get("images")
+	dirPath=map1.Get("dirPath")
+	If dirPath.StartsWith(".") Then
+		dirPath.SubString2(1,dirPath.Length)
+	End If
+	If isFile=False Then
+		filename=images.Get(0)
+		BANano.GetElement("#pagenum").SetValue(1)
+	Else
+		Dim index As Int=images.IndexOf(filename)
+		'Log("filename:"&filename)
+		'Log("index:"&index)
+		currentIndex=index+1
+		BANano.GetElement("#pagenum").SetValue(currentIndex)
+	End If
+	setImageSrc
+End Sub
+
+Sub setImageSrc
+	Dim imgUrl As String
+	'filename=filename.Replace("\","/")
+	Dim tempDirPath As String=dirPath
+	If SourceSKCheckbox.Checked=False Then
+		tempDirPath=tempDirPath&"/out"
+	End If
+	If filename.CharAt(0)="/" Then
+		imgUrl="/"&tempDirPath&filename
+	Else
+		imgUrl="/"&tempDirPath&"/"&filename
+	End If
+	SKImage1.Src=imgUrl
+End Sub
+
+
+
+Sub loadPaginator
+	BANano.LoadLayout("#paginator", "paginator")
+	addHandler
+	changeIndex(currentIndex)
+End Sub
+
+Sub addHandler
+	Dim previousTxt As BANanoElement
+	previousTxt=BANano.GetElement("#previouspage")
+	Dim nextTxt As BANanoElement
+	nextTxt=BANano.GetElement("#nextpage")
+	previousTxt.HandleEvents("click", Me, "previouspage_click")
+	nextTxt.HandleEvents("click", Me, "nextpage_click")
+End Sub
+
+Sub changeIndex(num As Int)
+	currentIndex=Max(1,num)
+	currentIndex=Min(images.Size,num)
+	If num<1 Or num>images.Size Then
+		BANano.Alert("到边界了")
+		Return
+	End If
+	BANano.GetElement("#pagenum").SetValue(num)
+	filename=images.Get(num-1)
+	setImageSrc
+	BANano.Window.ScrollTo(0,0)
+End Sub
+
+
+Sub SKNavigationBar1_Click (event As BANanoEvent, menu As String)
+	Log("Clicked on menu: " & menu)
+	Select menu
+		Case "about"
+			BANano.Window.Open("/about.html","","",False)
+	End Select
+	SKNavigationBar1.CloseDrawerMenu
+End Sub
+
+
+Sub PreviousPage_Click (event As BANanoEvent)
+	Log(currentIndex)
+	jumpToPage(currentIndex-1)
+End Sub
+
+Sub NextPage_Click (event As BANanoEvent)
+	Log(currentIndex)
+	jumpToPage(currentIndex+1)
+End Sub
+
+Sub jumpToPage(num As Int)
+	If num<=0 Then 
+		Return
+	End If
+	Dim startNum As Int=num-1
+	changeIndex(num)
+
+End Sub
+
+Sub PageNum_Keyup (event As BANanoEvent)
+	If event.Key="Enter" Then
+		jumpToPage(BANano.GetElement("#pagenum").GetValue)
+	End If
+End Sub
+
+Sub SourceSKCheckbox_Change (event As BANanoEvent)
+	setImageSrc
+End Sub

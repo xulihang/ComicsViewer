@@ -1,0 +1,217 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+File1=background.jpg
+File10=MultiLayout.bjl
+File11=paginator.bjl
+File12=skeleton-all.min.css
+File13=styles.css
+File2=FontAwesome.otf
+File3=fontawesome-webfont.eot
+File4=fontawesome-webfont.svg
+File5=fontawesome-webfont.ttf
+File6=fontawesome-webfont.woff
+File7=fontawesome-webfont.woff2
+File8=layout1.bjl
+File9=lunr.js
+FileGroup1=Default Group
+FileGroup10=Default Group
+FileGroup11=Default Group
+FileGroup12=Default Group
+FileGroup13=Default Group
+FileGroup2=Default Group
+FileGroup3=Default Group
+FileGroup4=Default Group
+FileGroup5=Default Group
+FileGroup6=Default Group
+FileGroup7=Default Group
+FileGroup8=Default Group
+FileGroup9=Default Group
+Group=Default Group
+Library1=jcore
+Library2=jfx
+Library3=banano
+Library4=bananoskeleton
+Library5=jshell
+Module1=HTTPRequests
+NumberOfFiles=13
+NumberOfLibraries=5
+NumberOfModules=1
+Version=7.8
+@EndOfDesignText@
+#Region Project Attributes 
+	#MainFormWidth: 600
+	#MainFormHeight: 600 
+	#IgnoreWarnings: 16, 10, 14, 15
+#End Region
+
+Sub Process_Globals
+	Private BANano As BANano 'ignore
+	Private Keyword As SKTextBox 'ignore
+	Private SearchButton As SKButton 'ignore
+	Private SKNavigationBar1 As SKNavigationBar 'ignore
+	Private ResultList As SKList
+	Private currentPageNum As Int=1
+	Private KeysCombo As SKCombo
+	Private ResultRow As SKRow
+	Private idx As BANanoObject
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	
+	' you can change some output params here
+	BANano.Initialize("BANano", "Search",DateTime.Now)
+	BANano.HTML_NAME = "search.html"
+	BANano.JAVASCRIPT_NAME = "searchpage" & DateTime.Now & ".js"
+	BANano.SERVICEWORKER_NAME="searchSW.js"
+	BANano.MANIFEST_NAME="searchManifest.json"
+	BANano.Header.Title="Search"
+	
+	BANano.ExternalTestConnectionServer = "http://www.baidu.com"
+	BANano.Header.AddJavascriptFile("lunr.js")
+	BANano.Header.AddCSSFile("skeleton-all.min.css")
+	BANano.Header.AddCSSFile("styles.css")
+	' start the build
+	BANano.Build(File.DirApp)
+	Log("copying...")
+	'Dim sh As Shell
+	'sh.Initialize("","xcopy.exe",Array("/E/Y","E:\B4J\Search\Objects\Search\*","E:\B4J\TMSearch\Objects\www"))
+	'sh.RunSynchronous(5000)
+	Log("done")
+	ExitApplication
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
+
+' HERE STARTS YOUR APP
+Sub BANano_Ready()
+	' normal layouts
+	BANano.LoadLayout("#body", "layout1")
+	
+	' Add some menu items (are added in reverse!)
+	SKNavigationBar1.AddMenu("about","关于")
+	SKNavigationBar1.AddMenu("logo", "Search")
+	KeysCombo.AddOption("idx","所有")
+	Dim url As String
+	url=$"/index.json"$
+	Log("url"&url)
+	HTTPRequests.GetResults(url)
+End Sub
+
+Sub loadIndex(json As String)
+	Dim documents As List=BANano.FromJson(json)
+	Dim lunr As BANanoObject
+	lunr.Initialize("lunr")
+	idx=lunr.GetFunction("Index").RunMethod("load",Array(documents))
+
+End Sub
+
+Public Sub DoSearch
+	Dim text As String=BANano.GetElement("#keyword").GetValue
+	Log(text)
+	If text="" Then
+		BANano.Alert("请输入关键词。")
+		Return
+	End If
+	BANano.Window.ScrollTo(0,0)
+	Dim matches As List=idx.RunMethod("search",Array(text))
+	If matches.Size=0 Then
+		BANano.Alert("No match")
+		Return
+	End If
+
+	For i=0 To matches.Size - 1
+        Dim match As Map=matches.Get(i)
+		Dim Ret As Long
+		Dim AllViews As Map
+		Dim name As String=match.Get("ref")
+		Ret = BANano.LoadLayoutArray("#resultrow", "MultiLayout", (i=0)) ' only clear the parent if it is the first layout that is loaded
+		' ret returns a unique number you can use to get all views
+		AllViews = BANano.GetAllViewsFromLayoutArray(Me, "MultiLayout", Ret)
+		Dim TitleLabel As SKLabel = AllViews.Get("titlelabel") ' always lowercase
+		TitleLabel.Text = $"<a target="_blank" href="/viewer.html?path=${BANano.EncodeURI(name)}">${(name)}</a>"$
+	Next
+End Sub
+
+Sub loadPaginator
+	BANano.LoadLayout("#paginator", "paginator")
+	addHandler
+	changePageNum(currentPageNum)
+End Sub
+
+Sub addHandler
+	Dim previousTxt As BANanoElement
+	previousTxt=BANano.GetElement("#previouspage")
+	Dim nextTxt As BANanoElement
+	nextTxt=BANano.GetElement("#nextpage")
+	previousTxt.HandleEvents("click", Me, "previouspage_click")
+	nextTxt.HandleEvents("click", Me, "nextpage_click")
+End Sub
+
+Sub changePageNum(num As Int)
+	currentPageNum=Max(1,num)
+	BANano.GetElement("#pagenum").SetValue(num)
+End Sub
+
+Sub SearchButton_Click (event As BANanoEvent)
+	Log("button 1 click")
+	currentPageNum=1
+	DoSearch
+	' to prevent also raising the R1_Click event
+	event.StopPropagation	
+End Sub
+
+Sub R1_Click (event As BANanoEvent)
+	Log("R1 click")
+End Sub
+
+Sub SKNavigationBar1_Click (event As BANanoEvent, menu As String)
+	Log("Clicked on menu: " & menu)
+	Select menu
+		Case "upload"
+			BANano.Window.Open("/upload.html","","",False)
+		Case "about"
+			BANano.Window.Open("/about.html","","",False)
+	End Select
+	
+	SKNavigationBar1.CloseDrawerMenu
+End Sub
+
+
+Sub PreviousPage_Click (event As BANanoEvent)
+	Log(currentPageNum)
+	jumpToPage(currentPageNum-1)
+End Sub
+
+Sub NextPage_Click (event As BANanoEvent)
+	Log(currentPageNum)
+	jumpToPage(currentPageNum+1)
+End Sub
+
+Sub jumpToPage(num As Int)
+	If num<=0 Then 
+		Return
+	End If
+	Dim startNum As Int=num-1
+	changePageNum(num)
+	DoSearch
+End Sub
+
+Sub PageNum_Keyup (event As BANanoEvent)
+	If event.Key="Enter" Then
+		jumpToPage(BANano.GetElement("#pagenum").GetValue)
+	End If
+End Sub
+
+Sub Keyword_KeyUp (event As BANanoEvent)
+	If event.Key="Enter" Then
+		currentPageNum=1
+		DoSearch
+	End If
+End Sub
+
+Sub ResultRow_Click (event As BANanoEvent)
+	Log("resultrow")
+End Sub

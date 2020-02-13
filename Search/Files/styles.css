@@ -1,0 +1,25 @@
+a.title {
+    color:black;
+    text-decoration:none;
+}
+
+a.title:hover {
+    color:gray;
+    text-decoration:underline;
+}
+
+
+#contenttable td {
+    width:50%!important;
+}
+
+.txtbtn:hover {
+    text-decoration:underline;
+    color:gray;
+}
+
+em {
+    color:#c00;
+    font-style:normal;
+    font-weight:bold;
+}
