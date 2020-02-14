@@ -62,9 +62,11 @@ Sub AppStart (Form1 As Form, Args() As String)
 	' you can change some output params here
 	BANano.Initialize("BANano", "Search",DateTime.Now)
 	BANano.HTML_NAME = "search.html"
-	BANano.JAVASCRIPT_NAME = "searchpage" & DateTime.Now & ".js"
+	'BANano.JAVASCRIPT_NAME = "searchpage" & DateTime.Now & ".js"
+	BANano.JAVASCRIPT_NAME = "searchpage.js"
 	BANano.SERVICEWORKER_NAME="searchSW.js"
 	BANano.MANIFEST_NAME="searchManifest.json"
+	
 	BANano.Header.Title="Search"
 	
 	BANano.ExternalTestConnectionServer = "http://www.baidu.com"
@@ -93,7 +95,7 @@ Sub BANano_Ready()
 	
 	' Add some menu items (are added in reverse!)
 	SKNavigationBar1.AddMenu("about","关于")
-	SKNavigationBar1.AddMenu("logo", "Search")
+	SKNavigationBar1.AddMenu("logo", "检索")
 	Dim url As String
 	url=$"/index.json"$
 	Log("url"&url)
@@ -161,7 +163,8 @@ Sub showDetail(json As String,ref As String,projectName As String,DetailLabel As
 		documents=BANano.FromJson(json)
 		projects.Put(projectName,documents)
 	End If
-	Dim document As Map=documents.Get(ref)
+	
+	Dim document As Map=documents.Get(filenameLessRef(ref))
 	'Log(document.Get("source"))
 	'Log(document.Get("target"))
 	Dim sb As StringBuilder
@@ -182,6 +185,18 @@ Sub highlighted(text As String) As String
 	Return text.Replace(kw,"<em>"&kw&"</em>")
 End Sub
 
+Sub filenameLessRef(ref As String) As String
+	Dim parts As List
+	parts=stringToList(":",ref)
+	Return parts.Get(1)&":"&parts.Get(2)
+End Sub
+
+Sub stringToList(pattern As String,text As String) As List
+	Dim parts As List
+	parts.Initialize
+	parts.AddAll(BANano.Split(pattern,text))
+	Return parts
+End Sub
 
 Sub loadPaginator
 	BANano.LoadLayout("#paginator", "paginator")
