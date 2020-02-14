@@ -4,6 +4,6 @@ ModuleBreakpoints0=
 ModuleBreakpoints1=
 ModuleClosedNodes0=
 ModuleClosedNodes1=
-NavigationStack=HTTPRequests,Process_Globals,4,0,HTTPRequests,GetResults,19,0,Main,loadIndex,68,6,Visual Designer,MultiLayout.bjl,-100,1,Main,SearchButton_Click,118,0,Main,DoSearch,74,2,Main,Process_Globals,8,4,Main,BANano_Ready,54,6,Main,AppStart,26,6
+NavigationStack=Main,loadIndex,65,6,Main,Process_Globals,16,6,Main,BANano_Ready,60,6,HTTPRequests,GetDetail,39,6,Main,AppStart,22,0,Visual Designer,layout1.bjl,-100,2,Main,DoSearch,95,6,Main,highlighted,138,6,Main,showDetail,131,6
 SelectedBuild=0
 VisibleModules=1
