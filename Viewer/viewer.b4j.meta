@@ -4,6 +4,6 @@ ModuleBreakpoints0=
 ModuleBreakpoints1=
 ModuleClosedNodes0=
 ModuleClosedNodes1=
-NavigationStack=Main,jumpToPage,183,1,Main,PageNum_Keyup,189,0,Main,SourceSKCheckbox_Change,192,1,Visual Designer,paginator.bjl,-100,1,Visual Designer,MultiLayout.bjl,-100,1,Main,Process_Globals,12,6,Main,loadPaginator,135,0,Visual Designer,layout1.bjl,-100,6,Main,setImageSrc,119,6,Main,AppStart,27,0
+NavigationStack=Main,filenameLessRef,147,0,Main,stringToList,159,6,Main,Process_Globals,15,0,Main,setImages,105,0,Main,SourceSKCheckbox_Change,269,0,Main,setImageSrc,137,0,Main,loadGeometries,147,6,Main,showBox,172,6,Main,AppStart,32,2,Main,showBoxBasedOnGeometry,196,6
 SelectedBuild=0
 VisibleModules=1

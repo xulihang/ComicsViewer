@@ -50,13 +50,14 @@ Sub Process_Globals
 	Private SKNavigationBar1 As SKNavigationBar 'ignore
 	Private currentIndex As Int=1
 	Private ResultRow As SKRow
-	Private idx As BANanoObject
 	Private projectName As String
 	Private dirPath As String
 	Private filename As String
 	Private images As List
 	Private isFile As Boolean
 	Private SourceSKCheckbox As SKCheckbox
+	Private geometries As Map
+	Private boxIndex As Int=-1
 End Sub
 
 Sub AppStart (Form1 As Form, Args() As String)
@@ -69,7 +70,7 @@ Sub AppStart (Form1 As Form, Args() As String)
 	BANano.SERVICEWORKER_NAME="viewerSW.js"
 	BANano.MANIFEST_NAME="viewerManifest.json"
 	BANano.Header.Title="Comics Viewer"
-	
+	BANano.Header.Viewport=$"width=device-width, initial-scale=1"$
 	BANano.ExternalTestConnectionServer = "http://www.baidu.com"
 	BANano.Header.AddCSSFile("skeleton-all.min.css")
 	BANano.Header.AddCSSFile("styles.css")
@@ -103,7 +104,9 @@ Sub BANano_Ready()
 	    BANano.Alert("未指定路径。")
 	End If
 	addHandler
+	geometries.Initialize
 End Sub
+
 
 Sub loadImage(url As String)
 	'1.itp:3.jpg:0
@@ -114,6 +117,7 @@ Sub loadImage(url As String)
 		projectName=parts.Get(0)
 		filename=parts.Get(1)
 		Dim index As Int=parts.Get(2)
+		boxIndex=index
 	'1.itp
 	Else
 		projectName=url
@@ -168,9 +172,82 @@ Sub setImageSrc
 		imgUrl="/"&tempDirPath&"/"&filename
 	End If
 	SKImage1.Src=imgUrl
+	loadGeometries
 End Sub
 
 
+Sub loadGeometries
+	Log("boxIndex"&boxIndex)
+	If geometries.Size=0 And boxIndex<>-1 Then
+		Dim url As String="/"&projectName&"-geometry.json"
+		HTTPRequests.GetGeometries(url)
+	End If
+	If boxIndex<>-1 Then
+	    Dim index As Int=images.IndexOf(filename)
+	    If index=currentIndex-1 Then
+			showBox("")
+		End If
+	End If
+End Sub
+
+Sub filenameLessRef(ref As String) As String
+	Dim parts As List
+	parts=stringToList(":",ref)
+	Return parts.Get(1)&":"&parts.Get(2)
+End Sub
+
+Sub stringToList(pattern As String,text As String) As List
+	Dim parts As List
+	parts.Initialize
+	parts.AddAll(BANano.Split(pattern,text))
+	Return parts
+End Sub
+
+Sub showBox(json As String)
+	If geometries.Size=0 Then
+		Try
+			geometries=BANano.FromJson(json)
+		Catch
+			Log(LastException)
+			Return
+		End Try
+	End If
+	Dim params As Map=BANano.GetURLParams(BANano.GetCurrentUrl)
+	If params.ContainsKey("path") Then
+		Dim path As String=params.Get("path")
+		path=filenameLessRef(path)
+		If geometries.ContainsKey(path) Then
+			Dim geometry As Map=geometries.Get(path)
+			showBoxBasedOnGeometry(geometry)
+		End If
+	End If
+End Sub
+
+Sub showBoxBasedOnGeometry(geometry As Map)
+	Dim textBox As String
+	Dim row As BANanoElement=BANano.GetElement("#resultrow")
+	'Log(row.OffsetWidth)
+	Dim X,Y,width,height As Double
+	Dim ratio As Double=geometries.Get("ratio") 
+	X=geometry.Get("X")
+	Y=geometry.Get("Y")
+	width=geometry.Get("width")
+	height=geometry.Get("height")
+	X=BANano.parseInt(row.OffsetWidth*X)+row.OffsetLeft
+	Y=BANano.parseInt(row.OffsetWidth/ratio*Y)
+	width=BANano.parseInt(row.OffsetWidth*width)
+	height=BANano.parseInt(row.OffsetWidth/ratio*height)
+	textBox=$"<div id="textbox" style="
+    position: absolute;
+    left: ${X}px;
+	top: ${Y}px;
+    width: ${width}px;
+    height: ${height}px;
+    border: 3px solid red;
+"></div>"$
+	Dim row As BANanoElement=BANano.GetElement("#resultrow")
+	row.Prepend(textBox)
+End Sub
 
 Sub loadPaginator
 	BANano.LoadLayout("#paginator", "paginator")
@@ -188,6 +265,7 @@ Sub addHandler
 End Sub
 
 Sub changeIndex(num As Int)
+    boxIndex=-1
 	currentIndex=Max(1,num)
 	currentIndex=Min(images.Size,num)
 	If num<1 Or num>images.Size Then
